@@ -1,3 +1,4 @@
+import re
 import requests
 from bs4 import BeautifulSoup
 
@@ -16,3 +17,14 @@ if response.ok:
     category = soup.find("ul", "breadcrumb").find_all("a")[2].text.strip()
 
 
+
+    tds_informations_book = soup.find_all("td")
+    
+    text_informations_book = []
+    regex_pattern = r'In stock \((\d+) available\)'
+    
+    for info in tds_informations_book:
+        clean_info = re.sub(regex_pattern, r"\1", info.text.replace("£", ""))
+        text_informations_book.append(clean_info)
+    
+    
