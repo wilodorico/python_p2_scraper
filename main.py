@@ -67,9 +67,10 @@ def write_to_csv(headers, data):
 def main():
     url_business_book = urljoin(BASE_URL , "catalogue/the-dirty-little-secrets-of-getting-your-dream-job_994/index.html")
 
-    response = requests.get(url_business_book)
-
-    if response.ok:
+    try:
+        response = requests.get(url_business_book)
+        response.raise_for_status()
+        
         soup = BeautifulSoup(response.content, features="html.parser")
 
         title, description, category, url_image = extract_book_infos(soup)
@@ -89,6 +90,12 @@ def main():
         ]
         
         write_to_csv(HEADERS_CSV, data)
+        
+    except requests.exceptions.RequestException as e:
+        print("Error on HTTP request : ", e)
+    except Exception as e:
+        print("Error has occured : ", e)
+        
 
 if __name__ == "__main__":
     main()
