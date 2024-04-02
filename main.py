@@ -19,83 +19,124 @@ HEADERS_CSV = [
 ]
 
 
-def extract_book_infos(soup):
-    title = soup.find("h1").text.strip()
-    description = soup.find("div", id="product_description").find_next_sibling("p").text.strip()
-    category = soup.find("ul", "breadcrumb").find_all("a")[2].text.strip()
-    
-    relative_image_url = soup.find("img")["src"]
-    url_image = urljoin(BASE_URL, relative_image_url)
-    
-    return title, description, category, url_image
+def get_all_books_data_in_categorie(book_links_categorie):
+    books_data = []
+    for book_link in book_links_categorie:
+        books_data.append(extract_book_infos(book_link))
+    return books_data
 
 
-def extract_book_infos_from_table(soup):
-    tds_informations_book = soup.find_all("td")
+def extract_book_infos(url_book):
+    try:
+        response = requests.get(url_book)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, features="html.parser")
         
-    text_informations_book = []
-    regex_pattern = r'In stock \((\d+) available\)'
-    
-    for info in tds_informations_book:
-        clean_info = re.sub(regex_pattern, r"\1", info.text.replace("£", ""))
-        text_informations_book.append(clean_info)
-    
-    th_informations_list = [
-        "upc", 
-        "product_type", 
-        "price_exclude_tax", 
-        "price_include_tax", 
-        "tax", 
-        "availability", 
-        "number_of_reviews"
-    ]
-    product_infos = {}
-    
-    for key, text in zip(th_informations_list, text_informations_book):
-        product_infos[key] = text
+        title = soup.find("h1").text.strip()
+        description = soup.find("div", id="product_description").find_next_sibling("p").text.strip()
+        category = soup.find("ul", "breadcrumb").find_all("a")[2].text.strip()
         
-    return product_infos
+        relative_image_url = soup.find("img")["src"]
+        url_image = urljoin(BASE_URL, relative_image_url)
+        
+        tds_informations_book = soup.find_all("td")
+            
+        text_informations_book = []
+        regex_pattern = r'In stock \((\d+) available\)'
+        
+        for info in tds_informations_book:
+            clean_info = re.sub(regex_pattern, r"\1", info.text.replace("£", ""))
+            text_informations_book.append(clean_info)
+        
+        th_informations_list = [
+            "upc", 
+            "product_type", 
+            "price_exclude_tax", 
+            "price_include_tax", 
+            "tax", 
+            "availability", 
+            "number_of_reviews"
+        ]
+        product_infos = {}
+        
+        for key, text in zip(th_informations_list, text_informations_book):
+            product_infos[key] = text
+            
+        data = [
+                url_book,
+                title,
+                description,
+                category,
+                product_infos.get("upc", ""),
+                product_infos.get("price_exclude_tax", ""),
+                product_infos.get("price_include_tax", ""),
+                product_infos.get("availability", ""),
+                product_infos.get("number_of_reviews", ""),
+                url_image
+            ]
+        
+        return data
+    
+    except Exception as e:
+        print("Error has occured : ", e)
 
 
-def write_to_csv(headers, data):
-    with open("book.csv", "w", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(headers)
-            writer.writerow(data)
+def get_all_books_urls_categorie(url_categorie):
+    books_urls = []
+    
+    while True:
+        try:
+            response = requests.get(url_categorie)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, features="html.parser")
+            
+            book_links = extract_book_urls(soup)
+            books_urls.extend(book_links)
+            
+            next_url = get_next_url(soup)
+            if next_url:
+                url_categorie = urljoin(url_categorie, next_url)
+            else:
+                break
+
+        except Exception as e:
+            print("Error has occured : ", e)
+        
+    return books_urls
+        
+
+def extract_book_urls(soup):
+    book_links = soup.select("h3 a")
+    links_book = []
+    for link in book_links:
+        relative_url = link["href"]
+        cleaned_url = "/catalogue/" + re.sub(r'\.\./', '', relative_url)
+        complete_url = urljoin(BASE_URL, cleaned_url)
+        links_book.append(complete_url)
+        
+    return links_book
+
+
+def get_next_url(soup):
+    btn_next = soup.find("li", class_="next")
+    if btn_next:
+        relative_next_link = btn_next.find("a")["href"]
+        return relative_next_link
+    return None
 
 
 def main():
-    url_business_book = urljoin(BASE_URL , "catalogue/the-dirty-little-secrets-of-getting-your-dream-job_994/index.html")
-
-    try:
-        response = requests.get(url_business_book)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, features="html.parser")
-
-        title, description, category, url_image = extract_book_infos(soup)
-        product_infos = extract_book_infos_from_table(soup)
-        
-        data = [
-            url_business_book,
-            title,
-            description,
-            category,
-            product_infos.get("upc", ""),
-            product_infos.get("price_exclude_tax", ""),
-            product_infos.get("price_include_tax", ""),
-            product_infos.get("availability", ""),
-            product_infos.get("number_of_reviews", ""),
-            url_image
-        ]
-        
-        write_to_csv(HEADERS_CSV, data)
-        
-    except requests.exceptions.RequestException as e:
-        print("Error on HTTP request : ", e)
-    except Exception as e:
-        print("Error has occured : ", e)
-        
+    url_category = "http://books.toscrape.com/catalogue/category/books/mystery_3/index.html"
+    
+    book_links_categorie = get_all_books_urls_categorie(url_category)
+    books_data = get_all_books_data_in_categorie(book_links_categorie)
+    
+    with open("book.csv", "w", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(HEADERS_CSV)
+        for data in books_data:
+            writer.writerow(data)
+            
 
 if __name__ == "__main__":
     main()
