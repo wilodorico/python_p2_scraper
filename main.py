@@ -40,28 +40,7 @@ def extract_book_infos(url_book):
         relative_image_url = soup.find("img")["src"]
         url_image = urljoin(BASE_URL, relative_image_url)
         
-        tds_informations_book = soup.find_all("td")
-            
-        text_informations_book = []
-        regex_pattern = r'In stock \((\d+) available\)'
-        
-        for info in tds_informations_book:
-            clean_info = re.sub(regex_pattern, r"\1", info.text.replace("£", ""))
-            text_informations_book.append(clean_info)
-        
-        th_informations_list = [
-            "upc", 
-            "product_type", 
-            "price_exclude_tax", 
-            "price_include_tax", 
-            "tax", 
-            "availability", 
-            "number_of_reviews"
-        ]
-        product_infos = {}
-        
-        for key, text in zip(th_informations_list, text_informations_book):
-            product_infos[key] = text
+        product_infos = extract_product_infos(soup)
             
         data = [
                 url_book,
@@ -80,6 +59,33 @@ def extract_book_infos(url_book):
     
     except Exception as e:
         print("Error has occured : ", e)
+        
+       
+def extract_product_infos(soup):
+    tds_informations_book = soup.find_all("td")
+            
+    text_informations_book = []
+    regex_pattern = r'In stock \((\d+) available\)'
+    
+    for info in tds_informations_book:
+        clean_info = re.sub(regex_pattern, r"\1", info.text.replace("£", ""))
+        text_informations_book.append(clean_info)
+    
+    th_informations_list = [
+        "upc", 
+        "product_type", 
+        "price_exclude_tax", 
+        "price_include_tax", 
+        "tax", 
+        "availability", 
+        "number_of_reviews"
+    ]
+    product_infos = {}
+    
+    for key, text in zip(th_informations_list, text_informations_book):
+        product_infos[key] = text
+        
+    return product_infos
 
 
 def get_all_books_urls_categorie(url_categorie):
@@ -147,6 +153,22 @@ def get_stars(soup):
                 pass
         
         return stars
+
+
+def get_urls_categorie(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, features="html.parser")
+    
+    side_nav_categorie = soup.find(class_="side_categories").find("ul").find("ul")
+    list_categorie = side_nav_categorie.find_all("li")
+    urls_categorie = []
+    for link in list_categorie:
+        relative_link = link.find("a")["href"]
+        complete_link = urljoin(BASE_URL, relative_link)
+        urls_categorie.append(complete_link)
+    
+    return urls_categorie
 
 
 def main():
