@@ -1,3 +1,4 @@
+import os
 import re
 import csv
 from urllib.parse import urljoin
@@ -190,16 +191,24 @@ def extract_product_infos(soup):
 
 
 def main():
-    url_category = "http://books.toscrape.com/catalogue/category/books/classics_6/index.html"
+    folder = 'book_scrap_files'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+        
+    urls_category = get_urls_categorie(BASE_URL)
     
-    book_links_categorie = get_all_books_urls_categorie(url_category)
-    books_data = get_all_books_data_in_categorie(book_links_categorie)
-    
-    with open("book.csv", "w", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(HEADERS_CSV)
-        for data in books_data:
-            writer.writerow(data)
+    for url_category in urls_category:
+        book_links_category = get_all_books_urls_categorie(url_category)
+        books_data = get_all_books_data_in_categorie(book_links_category)
+        category = books_data[0][3]
+        
+        filename = os.path.join(folder, f"{category}.csv")
+
+        with open(filename, "w", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(HEADERS_CSV)
+            for data in books_data:
+                writer.writerow(data)
             
 
 if __name__ == "__main__":
