@@ -35,6 +35,7 @@ def extract_book_infos(url_book):
         title = soup.find("h1").text.strip()
         description = soup.find("div", id="product_description").find_next_sibling("p").text.strip()
         category = soup.find("ul", "breadcrumb").find_all("a")[2].text.strip()
+        stars = get_stars(soup)
         
         relative_image_url = soup.find("img")["src"]
         url_image = urljoin(BASE_URL, relative_image_url)
@@ -71,7 +72,7 @@ def extract_book_infos(url_book):
                 product_infos.get("price_exclude_tax", ""),
                 product_infos.get("price_include_tax", ""),
                 product_infos.get("availability", ""),
-                product_infos.get("number_of_reviews", ""),
+                stars,
                 url_image
             ]
         
@@ -123,6 +124,29 @@ def get_next_url(soup):
         relative_next_link = btn_next.find("a")["href"]
         return relative_next_link
     return None
+
+
+def get_stars(soup):
+        bloc_stars = soup.find(class_="col-sm-6 product_main")
+        stars = bloc_stars.find_next("p").find_next("p").find_next("p")["class"][1]
+        
+        match stars:
+            case "Five": 
+                stars = 5
+            case "Four": 
+                stars = 4
+            case "Three": 
+                stars = 3
+            case "Two": 
+                stars = 2
+            case "One": 
+                stars = 1
+            case "Zero":
+                stars = 0
+            case _:
+                pass
+        
+        return stars
 
 
 def main():
