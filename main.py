@@ -124,8 +124,8 @@ def extract_title(soup):
 
 
 def extract_description(soup):
-    description = soup.find("div", id="product_description").find_next_sibling("p").text.strip()
-    return description if description else "Aucune description trouvée"
+    description = soup.find("div", id="product_description")
+    return description.find_next_sibling("p").text.strip() if description else "Aucune description trouvée"
 
 
 def extract_categorie(soup):
@@ -190,7 +190,7 @@ def extract_product_infos(soup):
 
 
 def main():
-    url_category = "http://books.toscrape.com/catalogue/category/books/mystery_3/index.html"
+    url_category = "http://books.toscrape.com/catalogue/category/books/classics_6/index.html"
     
     book_links_categorie = get_all_books_urls_categorie(url_category)
     books_data = get_all_books_data_in_categorie(book_links_categorie)
