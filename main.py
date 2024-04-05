@@ -21,18 +21,26 @@ HEADERS_CSV = [
 
 
 def get_all_books_data_in_categorie(book_links_categorie):
+    # Create a session to speed up request times
+    session = requests.Session()
+    
     books_data = []
     for book_link in book_links_categorie:
-        books_data.append(extract_book_infos(book_link))
+        response = session.get(book_link)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, features="html.parser")
+        books_data.append(extract_book_infos(soup, book_link))
     return books_data
 
 
 def get_all_books_urls_categorie(url_categorie):
     books_urls = []
+    # Create a session to speed up request times
+    session = requests.Session()
     
     while True:
         try:
-            response = requests.get(url_categorie)
+            response = session.get(url_categorie)
             response.raise_for_status()
             soup = BeautifulSoup(response.content, features="html.parser")
             
@@ -87,12 +95,7 @@ def get_urls_categorie(base_url):
     return urls_categorie
 
 
-def extract_book_infos(url_book):
-    try:
-        response = requests.get(url_book)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, features="html.parser")
-        
+def extract_book_infos(soup, url_book):
         title = extract_title(soup)
         description = extract_description(soup)
         category = extract_categorie(soup)
@@ -115,9 +118,6 @@ def extract_book_infos(url_book):
             ]
         
         return data
-    
-    except Exception as e:
-        print("Error has occured : ", e)
 
 
 def extract_title(soup):
@@ -191,7 +191,7 @@ def extract_product_infos(soup):
 
 
 def main():
-    folder = 'book_scrap_files'
+    folder = "book_scrap_files"
     if not os.path.exists(folder):
         os.makedirs(folder)
         
