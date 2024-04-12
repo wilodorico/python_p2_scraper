@@ -1,8 +1,9 @@
 import os
 import re
 import csv
-from urllib.parse import urljoin
 import requests
+from datetime import date
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 BASE_URL = "http://books.toscrape.com"
@@ -222,14 +223,15 @@ def main():
     for url_category in urls_category:
         book_links_category = get_all_books_urls_categorie(url_category)
         books_data = get_all_books_data_in_categorie(book_links_category)
-        category = books_data[0][3]
+        category = books_data[0][3].replace(" ", "_")
         
         # Create a folder for the category if it doesn't already exist
         category_folder = os.path.join(folder, category)
         if not os.path.exists(category_folder):
             os.makedirs(category_folder)
         
-        filename = os.path.join(category_folder, f"{category}.csv")
+        today = date.today().strftime("%d-%m-%Y")
+        filename = os.path.join(category_folder, f"{category}_{today}.csv")
 
         with open(filename, "w", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
