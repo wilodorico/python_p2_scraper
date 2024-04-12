@@ -190,8 +190,30 @@ def extract_product_infos(soup):
     return product_infos
 
 
+def download_image(url, file):
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(file, 'wb') as f:
+            f.write(response.content)
+        print(f"Image download in folder : '{file}'")
+    else:
+        print(f"Image download fails URL : {url}")
+
+
+def clean_special_characters(title):
+    if ":" in title:
+        splited_title = title.split(":")
+        title_cleaned = splited_title[0]
+    else:
+        title_cleaned = title
+
+    title_cleaned = re.sub(r'[^\w\s]', '', title_cleaned)
+    title_cleaned = title_cleaned.strip().replace(" ", "-").lower()
+    return title_cleaned
+
+
 def main():
-    folder = "book_scrap_files"
+    folder = "bookscrap_files"
     if not os.path.exists(folder):
         os.makedirs(folder)
         
@@ -202,14 +224,25 @@ def main():
         books_data = get_all_books_data_in_categorie(book_links_category)
         category = books_data[0][3]
         
-        filename = os.path.join(folder, f"{category}.csv")
+        # Create a folder for the category if it doesn't already exist
+        category_folder = os.path.join(folder, category)
+        if not os.path.exists(category_folder):
+            os.makedirs(category_folder)
+        
+        filename = os.path.join(category_folder, f"{category}.csv")
 
         with open(filename, "w", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(HEADERS_CSV)
             for data in books_data:
                 writer.writerow(data)
-            
+                
+                # Download image
+                url_image = data[-1]  # Last col CSV (URL image)
+                book_title = clean_special_characters(data[1])
+                name_image = os.path.join(category_folder, f"{book_title}.jpg") 
+                download_image(url_image, name_image)
+                            
 
 if __name__ == "__main__":
     main()
