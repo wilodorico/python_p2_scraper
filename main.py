@@ -21,47 +21,44 @@ HEADERS_CSV = [
 ]
 
 
-def get_all_books_data_in_categorie(book_links_categorie):
+def get_all_books_data_in_categorie(book_links_categorie, session_request):
     """Extracts data for all books in a category from their URLs.
 
     Args:
         book_links_categorie (list): A list containing the URLs of books in the category.
+        session_request (requests.Session): A session object for making HTTP requests.
 
     Returns:
         list: A list containing data for all books found in the category.
     """
     
-    # Create a session to speed up request times
-    session = requests.Session()
-    
     books_data_categorie = []
     for book_link in book_links_categorie:
-        response = session.get(book_link)
+        response = session_request.get(book_link)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, features="html.parser")
         books_data_categorie.append(extract_book_infos(soup, book_link))
     return books_data_categorie
 
 
-def get_all_books_urls_categorie(url_categorie):
+def get_all_books_urls_categorie(url_categorie, session_request):
     """Extracts the URLs of all books from a category.
 
     This function iterates through multiple pages of the category if Next button pagination is present.
 
     Args:
         url_categorie (str): The URL of the category page.
+        session_request (requests.Session): A session object for making HTTP requests.
 
     Returns:
         list: A list containing the URLs of all books found in the category.
     """
     
     books_urls = []
-    # Create a session to speed up request times
-    session = requests.Session()
     
     while True:
         try:
-            response = session.get(url_categorie)
+            response = session_request.get(url_categorie)
             response.raise_for_status()
             soup = BeautifulSoup(response.content, features="html.parser")
             
@@ -119,17 +116,18 @@ def get_next_url(soup):
     return None
 
 
-def get_urls_categories(base_url):
+def get_urls_categories(base_url, session_request):
     """Extracts the URLs of all categories from a base URL.
 
     Args:
         base_url (str): The base URL of the website to extract category URLs from.
+        session_request (requests.Session): A session object for making HTTP requests.
 
     Returns:
         list: A list containing the URLs of all categories found on the website.
     """
     
-    response = requests.get(base_url)
+    response = session_request.get(base_url)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, features="html.parser")
     
@@ -351,8 +349,7 @@ def clean_special_characters(title):
     """
     
     if ":" in title:
-        splited_title = title.split(":")
-        title_cleaned = splited_title[0]
+        title_cleaned = title.split(":")[0]
     else:
         title_cleaned = title
 
@@ -365,16 +362,19 @@ def main():
     folder = "bookscrap_files"
     if not os.path.exists(folder):
         os.makedirs(folder)
+        
+    # Create a session to speed up request times
+    session = requests.Session()
     
     # Get URLs of all categories    
-    urls_category = get_urls_categories(BASE_URL)
+    urls_category = get_urls_categories(BASE_URL, session)
     
     for url_category in urls_category:
         # Extract URLs of all books in the category
-        book_links_category = get_all_books_urls_categorie(url_category)
+        book_links_category = get_all_books_urls_categorie(url_category, session)
         
         # Extract data for all books in the category
-        books_data = get_all_books_data_in_categorie(book_links_category)
+        books_data = get_all_books_data_in_categorie(book_links_category, session)
         
         # Retrieve and format category name, replacing spaces with underscores 
         category = books_data[0][3].replace(" ", "_")
@@ -384,7 +384,7 @@ def main():
         if not os.path.exists(category_folder):
             os.makedirs(category_folder)
         
-        # Get today date to include in the filename
+        # Get and format today date to include in the filename csv
         today = date.today().strftime("%d-%m-%Y")
         filename = os.path.join(category_folder, f"{category}_{today}.csv")
 
