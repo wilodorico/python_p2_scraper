@@ -4,7 +4,7 @@ Ce projet est un script scraper de livres pour le site [Book to Scrape](http://b
 
 Le script récupère les informations sur tous les livres de chaque catégorie et télécharge leur image.
 
-Données récupérées :
+**Données récupérées :**
 - l'URL du livre
 - le titre
 - la description
@@ -26,7 +26,7 @@ Chaque dossier catégorie est stocké dans le dossier **bookscrap_files**
 ## Comment installer le projet
 1. Ouvrer un terminal
 2. Placer vous dans le dossier où vous voulez cloner le projet
-3. Cloner le projet avec la commande : `https://github.com/wilodorico/python_p2_scraper.git`
+3. Cloner le projet avec la commande : `git clone https://github.com/wilodorico/python_p2_scraper.git`
 
 ## Créer et activer l'environnement virtuel
 1. Placer vous sur le projet
