@@ -30,7 +30,7 @@ Chaque dossier catégorie est stocké dans le dossier **bookscrap_files**
 
 ## Créer et activer l'environnement virtuel
 1. Placer vous sur le projet
-2. Créer l'environnement virtuel avec la commande : `python -m env venv`
+2. Créer l'environnement virtuel avec la commande : `python -m venv env`
 3. Activer l'environnement virtuel :
 - Pour Windows : `env\Scripts\activate`
 - Pour MacOS et linux :  `source env/bin/activate`
